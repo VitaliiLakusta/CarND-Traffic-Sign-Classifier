@@ -181,6 +181,8 @@ def avgpool2d(x, k=2):
 EPOCHS = 10
 BATCH_SIZE = 128
 
+dropout_keep_prob = tf.placeholder(tf.float32)
+
 def ConvNet(x):
     # Arguments used for tf.truncated_normal, randomly defines variables for the weights and biases for each layer
     mu = 0
@@ -190,23 +192,19 @@ def ConvNet(x):
     wc1 = tf.Variable(tf.truncated_normal([5, 5, 3, 6], mu, sigma))
     bc1 = tf.Variable(tf.truncated_normal([6], mu, sigma))
     conv1 = conv2d(x, wc1, bc1, strides=1)
+    conv1 = tf.nn.dropout(conv1, keep_prob=dropout_keep_prob)
 
-    # Pooling. Input = 28x28x6. Output = 14x14x6.
-    conv1 = avgpool2d(conv1, k=2)
-
-    # Layer 2: Convolutional. Output = 10x10x16.
+    # Layer 2: Convolutional. Output = 24x24x16.
     wc2 = tf.Variable(tf.truncated_normal([5, 5, 6, 16], mu, sigma))
     bc2 = tf.Variable(tf.truncated_normal([16], mu, sigma))
     conv2 = conv2d(conv1, wc2, bc2, strides=1)
+    conv2 = tf.nn.dropout(conv2, keep_prob=dropout_keep_prob)
 
-    # Pooling. Input = 10x10x16. Output = 5x5x16.
-    conv2 = avgpool2d(conv2, k=2)
-
-    # Flatten. Input = 5x5x16. Output = 400.
+    # Flatten. Input = 24x24x16. Output = 9216.
     conv2 = flatten(conv2)
     
     # Layer 3: Fully Connected. Input = 400. Output = 120.
-    wd1 = tf.Variable(tf.truncated_normal([400, 120], mu, sigma))
+    wd1 = tf.Variable(tf.truncated_normal([9216, 120], mu, sigma))
     bd1 = tf.Variable(tf.truncated_normal([120], mu, sigma))
     fc1 = tf.add(tf.matmul(conv2, wd1), bd1)
 
@@ -253,7 +251,7 @@ def evaluate(X_data, y_data):
     for offset in range(0, num_examples, BATCH_SIZE):
         maxI = offset + BATCH_SIZE
         batch_x, batch_y = X_data[offset:maxI], y_data[offset:maxI]
-        accuracy = sess.run(accuracy_operation, feed_dict={x: batch_x, y: batch_y})
+        accuracy = sess.run(accuracy_operation, feed_dict={x: batch_x, y: batch_y, dropout_keep_prob: 1})
         total_accuracy += (accuracy * len(batch_x))
     return total_accuracy / num_examples
 
@@ -279,7 +277,7 @@ with tf.Session() as sess:
         X_shuffled, y_shuffled = shuffle(X_train_processed, y_train)
         for offset in range(0, num_examples, BATCH_SIZE):
             batch_x, batch_y = X_shuffled[offset:offset+BATCH_SIZE], y_shuffled[offset:offset+BATCH_SIZE]
-            sess.run(training_operation, feed_dict={x: batch_x, y: batch_y})
+            sess.run(training_operation, feed_dict={x: batch_x, y: batch_y, dropout_keep_prob: 0.75})
         
         validation_accuracy = evaluate(X_valid_processed, y_valid)
         print("EPOCH {}: Validation accuracy {:.3f}".format(i+1, validation_accuracy))
