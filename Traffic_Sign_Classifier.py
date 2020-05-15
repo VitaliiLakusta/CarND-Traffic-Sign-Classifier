@@ -173,6 +173,9 @@ def conv2d(x, W, b, strides=1):
 def maxpool2d(x, k=2):
     return tf.nn.max_pool(x, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='VALID')
 
+def avgpool2d(x, k=2):
+    return tf.nn.avg_pool(x, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='VALID')
+
 # TODO: experiment with dropout?
 
 EPOCHS = 10
@@ -189,7 +192,7 @@ def ConvNet(x):
     conv1 = conv2d(x, wc1, bc1, strides=1)
 
     # Pooling. Input = 28x28x6. Output = 14x14x6.
-    conv1 = maxpool2d(conv1, k=2)
+    conv1 = avgpool2d(conv1, k=2)
 
     # Layer 2: Convolutional. Output = 10x10x16.
     wc2 = tf.Variable(tf.truncated_normal([5, 5, 6, 16], mu, sigma))
@@ -197,7 +200,7 @@ def ConvNet(x):
     conv2 = conv2d(conv1, wc2, bc2, strides=1)
 
     # Pooling. Input = 10x10x16. Output = 5x5x16.
-    conv2 = maxpool2d(conv2, k=2)
+    conv2 = avgpool2d(conv2, k=2)
 
     # Flatten. Input = 5x5x16. Output = 400.
     conv2 = flatten(conv2)
@@ -281,7 +284,7 @@ with tf.Session() as sess:
         validation_accuracy = evaluate(X_valid_processed, y_valid)
         print("EPOCH {}: Validation accuracy {:.3f}".format(i+1, validation_accuracy))
 
-    saver.save(sess, './trained-model')
+    saver.save(sess, './model/trained-model')
     print("Model saved")
 
 # %% [markdown]
