@@ -193,7 +193,6 @@ def ConvNet(x):
 
     # Pooling. Input = 28x28x6. Output = 14x14x6
     conv1 = maxpool2d(conv1, k=2)
-    conv1 = tf.nn.dropout(conv1, keep_prob=dropout_keep_prob)
     
     # Layer 2: Convolutional. Output = 10x10x16.
     wc2 = tf.Variable(tf.truncated_normal([5, 5, 6, 16], mu, sigma))
@@ -202,7 +201,6 @@ def ConvNet(x):
 
     # Pooling. Input = 10x10x16. Output = 5x5x16
     conv2 = maxpool2d(conv2, k=2)
-    conv2 = tf.nn.dropout(conv2, keep_prob=dropout_keep_prob)
 
     # Flatten. Input = 5x5x16. Output = 400.
     conv2 = flatten(conv2)
@@ -214,6 +212,8 @@ def ConvNet(x):
 
     # ReLU Activation
     fc1 = tf.nn.relu(fc1)
+    # Dropout
+    fc1 = tf.nn.dropout(fc1, keep_prob=dropout_keep_prob)
 
     # Layer 4: Fully Connected. Input = 120. Output = 84.
     wd2 = tf.Variable(tf.truncated_normal([120, 84], mu, sigma))
@@ -222,6 +222,8 @@ def ConvNet(x):
     
     # ReLU Activation
     fc2 = tf.nn.relu(fc2)
+    # Dropout
+    fc2 = tf.nn.dropout(fc2, keep_prob=dropout_keep_prob)
 
     # Layer 5: Fully Connected. Input = 84. Output = n_classes
     wOut = tf.Variable(tf.truncated_normal([84, n_classes], mu, sigma))
@@ -281,7 +283,7 @@ with tf.Session() as sess:
         X_shuffled, y_shuffled = shuffle(X_train_processed, y_train)
         for offset in range(0, num_examples, BATCH_SIZE):
             batch_x, batch_y = X_shuffled[offset:offset+BATCH_SIZE], y_shuffled[offset:offset+BATCH_SIZE]
-            sess.run(training_operation, feed_dict={x: batch_x, y: batch_y, dropout_keep_prob: 0.75})
+            sess.run(training_operation, feed_dict={x: batch_x, y: batch_y, dropout_keep_prob: 0.5})
         
         validation_accuracy = evaluate(X_valid_processed, y_valid)
         print("EPOCH {}: Validation accuracy {:.3f}".format(i+1, validation_accuracy))
