@@ -283,7 +283,7 @@ with tf.Session() as sess:
         X_shuffled, y_shuffled = shuffle(X_train_processed, y_train)
         for offset in range(0, num_examples, BATCH_SIZE):
             batch_x, batch_y = X_shuffled[offset:offset+BATCH_SIZE], y_shuffled[offset:offset+BATCH_SIZE]
-            sess.run(training_operation, feed_dict={x: batch_x, y: batch_y, dropout_keep_prob: 0.5})
+            sess.run(training_operation, feed_dict={x: batch_x, y: batch_y, dropout_keep_prob: 0.75})
         
         validation_accuracy = evaluate(X_valid_processed, y_valid)
         print("EPOCH {}: Validation accuracy {:.3f}".format(i+1, validation_accuracy))
