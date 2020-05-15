@@ -286,6 +286,15 @@ with tf.Session() as sess:
     print("Model saved")
 
 # %% [markdown]
+# ## Test the Model on Test Set
+with tf.Session() as sess:
+    saver.restore(sess, tf.train.latest_checkpoint('./model'))
+
+    test_accuracy = evaluate(X_test_processsed, y_test)
+    print("Test Accuracy = {:.3f}".format(test_accuracy))
+
+
+# %% [markdown]
 # ---
 # 
 # ## Step 3: Test a Model on New Images
