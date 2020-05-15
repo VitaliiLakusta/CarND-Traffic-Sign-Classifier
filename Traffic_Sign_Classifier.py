@@ -176,8 +176,6 @@ def maxpool2d(x, k=2):
 def avgpool2d(x, k=2):
     return tf.nn.avg_pool(x, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='VALID')
 
-# TODO: experiment with dropout?
-
 EPOCHS = 10
 BATCH_SIZE = 128
 
@@ -192,19 +190,25 @@ def ConvNet(x):
     wc1 = tf.Variable(tf.truncated_normal([5, 5, 3, 6], mu, sigma))
     bc1 = tf.Variable(tf.truncated_normal([6], mu, sigma))
     conv1 = conv2d(x, wc1, bc1, strides=1)
-    conv1 = tf.nn.dropout(conv1, keep_prob=dropout_keep_prob)
 
-    # Layer 2: Convolutional. Output = 24x24x16.
+    # Pooling. Input = 28x28x6. Output = 14x14x6
+    conv1 = maxpool2d(conv1, k=2)
+    conv1 = tf.nn.dropout(conv1, keep_prob=dropout_keep_prob)
+    
+    # Layer 2: Convolutional. Output = 10x10x16.
     wc2 = tf.Variable(tf.truncated_normal([5, 5, 6, 16], mu, sigma))
     bc2 = tf.Variable(tf.truncated_normal([16], mu, sigma))
     conv2 = conv2d(conv1, wc2, bc2, strides=1)
+
+    # Pooling. Input = 10x10x16. Output = 5x5x16
+    conv2 = maxpool2d(conv2, k=2)
     conv2 = tf.nn.dropout(conv2, keep_prob=dropout_keep_prob)
 
-    # Flatten. Input = 24x24x16. Output = 9216.
+    # Flatten. Input = 5x5x16. Output = 400.
     conv2 = flatten(conv2)
     
     # Layer 3: Fully Connected. Input = 400. Output = 120.
-    wd1 = tf.Variable(tf.truncated_normal([9216, 120], mu, sigma))
+    wd1 = tf.Variable(tf.truncated_normal([400, 120], mu, sigma))
     bd1 = tf.Variable(tf.truncated_normal([120], mu, sigma))
     fc1 = tf.add(tf.matmul(conv2, wd1), bd1)
 
