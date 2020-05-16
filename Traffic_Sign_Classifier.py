@@ -261,6 +261,8 @@ def evaluate(X_data, y_data):
         total_accuracy += (accuracy * len(batch_x))
     return total_accuracy / num_examples
 
+saver = tf.train.Saver()
+
 # %% [markdown]
 # ### Train, Validate and Test the Model
 # %% [markdown]
@@ -271,7 +273,6 @@ def evaluate(X_data, y_data):
 from sklearn.utils import shuffle
 
 ### Model Training
-saver = tf.train.Saver()
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
 
@@ -293,6 +294,8 @@ with tf.Session() as sess:
 
 # %% [markdown]
 # ## Test the Model on Test Set
+print(X_test_processsed.shape)
+print(y_test.shape)
 with tf.Session() as sess:
     saver.restore(sess, tf.train.latest_checkpoint('./model'))
 
@@ -311,12 +314,56 @@ with tf.Session() as sess:
 # %% [markdown]
 # ### Load and Output the Images
 
+#%% 
+import pandas as pd
+sign_names = pd.read_csv('signnames.csv', delimiter=',')
+sign_names_dict = sign_names.to_dict()['SignName']
+def signName(label):
+    return sign_names_dict[label]
+
+def signNames(labels):
+    return list(map(lambda l: signName(l), labels))
+
+#%%
+
 # %%
-### Load the images and plot them here.
-### Feel free to use as many code cells as needed.
+from glob import glob
+import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
+import cv2
+
+filenames = glob('./images/*')
+test_imgs = []
+test_labels = []
+plt.figure(1, figsize=(15,15))
+for i in range(len(filenames)):
+    img = mpimg.imread(filenames[i])
+    img = cv2.resize(img, dsize=(32, 32), interpolation=cv2.INTER_LINEAR)
+    test_imgs.append(img)
+    label = int(filenames[i].split('/')[-1].split('_')[0])
+    test_labels.append(label)
+    # plot
+    plt.subplot(2,3,i+1)
+    plt.title(signName(label))
+    plt.imshow(img)
 
 # %% [markdown]
 # ### Predict the Sign Type for Each Image
+
+test_imgs_processed = preprocess(np.array(test_imgs))
+
+with tf.Session() as sess:
+    saver.restore(sess, tf.train.latest_checkpoint('./model'))
+
+    accuracy_test_imgs = evaluate(test_imgs_processed, test_labels)
+    print("Accuracy = {:.3f}".format(accuracy_test_imgs))
+
+    print("---------")
+    logits_eval =sess.run(logits, feed_dict={x: test_imgs_processed, y: test_labels, dropout_keep_prob: 1.})
+    predictions = np.argmax(logits_eval, axis=1)
+    print(signNames(test_labels), "labels")
+    print(signNames(predictions), "predictions")
+
 
 # %%
 ### Run the predictions here and use the model to output the prediction for each image.
