@@ -347,39 +347,53 @@ for i in range(len(filenames)):
 # %% [markdown]
 # ### Predict the Sign Type for Each Image
 
+# %% 
+
 test_imgs_processed = preprocess(np.array(test_imgs))
 
 with tf.Session() as sess:
     saver.restore(sess, tf.train.latest_checkpoint('./model'))
-
     accuracy_test_imgs = evaluate(test_imgs_processed, test_labels)
-    print("Accuracy = {:.3f}".format(accuracy_test_imgs))
 
-    print("---------")
-    logits_eval = sess.run(logits, feed_dict={x: test_imgs_processed, y: test_labels, dropout_keep_prob: 1.})
-    predictions = np.argmax(logits_eval, axis=1)
-    print("LABELS")
-    print(signNames(test_labels))
-    print("PREDICTIONS")
-    print(signNames(predictions))
-
-    logits_sorted = np.sort(logits_eval)
-    logits_cut = logits_sorted[:,-5:]
-    logits_cut = logits_cut[:,::-1]
-
-    logits_indexes_sorted = np.argsort(logits_eval)
-    logits_indexes_cut = logits_indexes_sorted[:,-5:]
-    logits_indexes_cut = logits_indexes_cut[:,::-1]
-    logits_named = list(map(lambda l: signNames(l), logits_indexes_cut))
-    print(logits_indexes_cut)
-    print(logits_cut)
-    print(logits_named)
+    softmax = tf.nn.softmax(logits)
+    softmax_eval = sess.run(softmax, feed_dict={x: test_imgs_processed, y: test_labels, dropout_keep_prob: 1.})
 
 # %%
-### Run the predictions here and use the model to output the prediction for each image.
-### Make sure to pre-process the images with the same pre-processing pipeline used earlier.
-### Feel free to use as many code cells as needed.
 
+print("Accuracy = {:.2f}%".format(accuracy_test_imgs*100))
+
+# %% 
+
+predictions = np.argmax(softmax_eval, axis=1)
+print("LABELS")
+print(signNames(test_labels))
+print("PREDICTIONS")
+print(signNames(predictions))
+
+# %% 
+
+softmax_sorted = np.sort(softmax_eval)
+softmax_cut = softmax_sorted[:,-5:]
+softmax_cut = softmax_cut[:,::-1]
+
+softmax_indexes_sorted = np.argsort(softmax_eval)
+softmax_indexes_cut = softmax_indexes_sorted[:,-5:]
+softmax_indexes_cut = softmax_indexes_cut[:,::-1]
+softmax_named = list(map(lambda l: signNames(l), softmax_indexes_cut))
+print(softmax_indexes_cut)
+print(softmax_cut)
+print(softmax_named)
+# %%
+
+plt.figure(figsize=(20,50))
+for i in range(len(softmax_named)):
+    plt.subplot(5,2,i*2+1)
+    y_pos = np.arange(len(softmax_named[i]))
+    plt.barh(y_pos, softmax_cut[i], align='center', alpha=0.5)
+    plt.yticks(y_pos, softmax_named[i])
+    plt.subplot(5,2,i*2+2)
+    plt.imshow(test_imgs[i])
+plt.show()
 # %% [markdown]
 # ### Analyze Performance
 
