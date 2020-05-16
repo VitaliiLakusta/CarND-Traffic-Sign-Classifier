@@ -2,6 +2,15 @@
 # To add a new markdown cell, type '# %% [markdown]'
 # %%
 from IPython import get_ipython
+from glob import glob
+import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
+import cv2
+import pickle
+import numpy as np
+import tensorflow as tf
+from tensorflow.contrib.layers import flatten
+from sklearn.utils import shuffle
 
 # %% [markdown]
 # # Self-Driving Car Engineer Nanodegree
@@ -27,7 +36,6 @@ from IPython import get_ipython
 
 # %%
 # Load pickled data
-import pickle
 
 # TODO: Fill this in based on where you saved the training and testing data
 
@@ -65,7 +73,6 @@ X_test, y_test = test['features'], test['labels']
 # %%
 ### Replace each question mark with the appropriate value. 
 ### Use python, pandas or numpy methods rather than hard coding the results
-import numpy as np
 
 # TODO: Number of training examples
 n_train = len(X_train)
@@ -100,7 +107,6 @@ print("Number of classes =", n_classes)
 # %%
 ### Data exploration visualization code goes here.
 ### Feel free to use as many code cells as needed.
-import matplotlib.pyplot as plt
 # Visualizations will be shown in the notebook.
 get_ipython().run_line_magic('matplotlib', 'inline')
 
@@ -162,8 +168,6 @@ maxV = print('min value in preprocessed data {}'.format(np.min(X_train_processed
 # ### Model Architecture
 
 # %%
-import tensorflow as tf
-from tensorflow.contrib.layers import flatten
 
 def conv2d(x, W, b, strides=1):
     conv = tf.nn.conv2d(x, W, strides=[1,strides,strides,1], padding='VALID')
@@ -270,7 +274,6 @@ saver = tf.train.Saver()
 # sets imply underfitting. A high accuracy on the training set but low accuracy on the validation set implies overfitting.
 
 # %%
-from sklearn.utils import shuffle
 
 ### Model Training
 with tf.Session() as sess:
@@ -319,18 +322,12 @@ import pandas as pd
 sign_names = pd.read_csv('signnames.csv', delimiter=',')
 sign_names_dict = sign_names.to_dict()['SignName']
 def signName(label):
-    return sign_names_dict[label]
+    return '{}-{}'.format(label, sign_names_dict[label])
 
 def signNames(labels):
     return list(map(lambda l: signName(l), labels))
 
 #%%
-
-# %%
-from glob import glob
-import matplotlib.image as mpimg
-import matplotlib.pyplot as plt
-import cv2
 
 filenames = glob('./images/*')
 test_imgs = []
@@ -359,11 +356,24 @@ with tf.Session() as sess:
     print("Accuracy = {:.3f}".format(accuracy_test_imgs))
 
     print("---------")
-    logits_eval =sess.run(logits, feed_dict={x: test_imgs_processed, y: test_labels, dropout_keep_prob: 1.})
+    logits_eval = sess.run(logits, feed_dict={x: test_imgs_processed, y: test_labels, dropout_keep_prob: 1.})
     predictions = np.argmax(logits_eval, axis=1)
-    print(signNames(test_labels), "labels")
-    print(signNames(predictions), "predictions")
+    print("LABELS")
+    print(signNames(test_labels))
+    print("PREDICTIONS")
+    print(signNames(predictions))
 
+    logits_sorted = np.sort(logits_eval)
+    logits_cut = logits_sorted[:,-5:]
+    logits_cut = logits_cut[:,::-1]
+
+    logits_indexes_sorted = np.argsort(logits_eval)
+    logits_indexes_cut = logits_indexes_sorted[:,-5:]
+    logits_indexes_cut = logits_indexes_cut[:,::-1]
+    logits_named = list(map(lambda l: signNames(l), logits_indexes_cut))
+    print(logits_indexes_cut)
+    print(logits_cut)
+    print(logits_named)
 
 # %%
 ### Run the predictions here and use the model to output the prediction for each image.
