@@ -356,5 +356,5 @@ def outputFeatureMap(image_input, tf_activation, activation_min=-1, activation_m
 
 with tf.Session() as sess:
     saver.restore(sess, model_save_file)
-    outputFeatureMap([test_imgs_processed[3]], conv1)
+    outputFeatureMap([test_imgs_processed[-1]], conv1)
 # %%
