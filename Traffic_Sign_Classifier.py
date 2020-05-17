@@ -11,6 +11,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.contrib.layers import flatten
 from sklearn.utils import shuffle
+import pandas as pd
 
 # %% [markdown]
 # # Self-Driving Car Engineer Nanodegree
@@ -71,22 +72,20 @@ X_test, y_test = test['features'], test['labels']
 # ### Provide a Basic Summary of the Data Set Using Python, Numpy and/or Pandas
 
 # %%
-### Replace each question mark with the appropriate value. 
-### Use python, pandas or numpy methods rather than hard coding the results
 
-# TODO: Number of training examples
+# Number of training examples
 n_train = len(X_train)
 
-# TODO: Number of validation examples
+# Number of validation examples
 n_validation = len(X_valid)
 
-# TODO: Number of testing examples.
+# Number of testing examples
 n_test = len(X_test)
 
-# TODO: What's the shape of an traffic sign image?
+# Shape of a traffic sign image
 image_shape = X_train[0].shape
 
-# TODO: How many unique classes/labels there are in the dataset.
+# How many unique classes/labels there are in the dataset.
 n_classes = len(np.unique(y_train))
 
 print("Number of training examples =", n_train)
@@ -104,21 +103,26 @@ print("Number of classes =", n_classes)
 # 
 # **NOTE:** It's recommended you start with something simple first. If you wish to do more, come back to it after you've completed the rest of the sections. It can be interesting to look at the distribution of classes in the training, validation and test set. Is the distribution the same? Are there more examples of some classes than others?
 
+# %% 
+sign_names = pd.read_csv('signnames.csv', delimiter=',')
+sign_names_dict = sign_names.to_dict()['SignName']
+def signName(label):
+    return '{}-{}'.format(label, sign_names_dict[label])
+
+def signNames(labels):
+    return list(map(lambda l: signName(l), labels))
 # %%
-### Data exploration visualization code goes here.
-### Feel free to use as many code cells as needed.
-# Visualizations will be shown in the notebook.
+
 get_ipython().run_line_magic('matplotlib', 'inline')
 
 plt.imshow(X_train[0])
-print(y_train[0])
-
+print(signName(y_train[0]))
 
 # %%
 # Show random image from a train set
 index = np.random.randint(0, len(X_train))
 plt.imshow(X_train[index])
-print(y_train[index])
+print(signName(y_train[index]))
 
 # %% [markdown]
 # ----
@@ -146,11 +150,9 @@ print(y_train[index])
 # 
 # Other pre-processing steps are optional. You can try different techniques to see if it improves performance. 
 # 
-# Use the code cell (or multiple code cells, if necessary) to implement the first step of your project.
 
 # %%
 ### Preprocessing data
-# TODO: should preprocessing be part of TF model?
 def preprocess(x):
     return (x.astype(np.float32) - 128) / 128
 X_train_processed = preprocess(X_train)
@@ -160,9 +162,9 @@ X_test_processsed = preprocess(X_test)
 
 # %%
 # Sanity check for preprocessing step
-print('example red channel pixel value from first image {}'.format(X_train_processed[0][0][0][0]))
-minV = print('max value in preprocessed data {}'.format(np.max(X_train_processed)))
-maxV = print('min value in preprocessed data {}'.format(np.min(X_train_processed)))
+print('Example red channel pixel value from first image {}'.format(X_train_processed[0][0][0][0]))
+minV = print('Max value in preprocessed data {}'.format(np.max(X_train_processed)))
+maxV = print('Min value in preprocessed data {}'.format(np.min(X_train_processed)))
 
 # %% [markdown]
 # ### Model Architecture
@@ -297,6 +299,7 @@ with tf.Session() as sess:
 
 # %% [markdown]
 # ## Test the Model on Test Set
+# %%
 print(X_test_processsed.shape)
 print(y_test.shape)
 with tf.Session() as sess:
@@ -304,7 +307,6 @@ with tf.Session() as sess:
 
     test_accuracy = evaluate(X_test_processsed, y_test)
     print("Test Accuracy = {:.3f}".format(test_accuracy))
-
 
 # %% [markdown]
 # ---
@@ -316,16 +318,6 @@ with tf.Session() as sess:
 # You may find `signnames.csv` useful as it contains mappings from the class id (integer) to the actual sign name.
 # %% [markdown]
 # ### Load and Output the Images
-
-#%% 
-import pandas as pd
-sign_names = pd.read_csv('signnames.csv', delimiter=',')
-sign_names_dict = sign_names.to_dict()['SignName']
-def signName(label):
-    return '{}-{}'.format(label, sign_names_dict[label])
-
-def signNames(labels):
-    return list(map(lambda l: signName(l), labels))
 
 #%%
 
@@ -385,7 +377,7 @@ print(softmax_cut)
 print(softmax_named)
 # %%
 
-plt.figure(figsize=(20,50))
+plt.figure(figsize=(10,20))
 for i in range(len(softmax_named)):
     plt.subplot(5,2,i*2+1)
     y_pos = np.arange(len(softmax_named[i]))
@@ -396,10 +388,6 @@ for i in range(len(softmax_named)):
 plt.show()
 # %% [markdown]
 # ### Analyze Performance
-
-# %%
-### Calculate the accuracy for these 5 new images. 
-### For example, if the model predicted 1 out of 5 signs correctly, it's 20% accurate on these new images.
 
 # %% [markdown]
 # ### Output Top 5 Softmax Probabilities For Each Image Found on the Web
