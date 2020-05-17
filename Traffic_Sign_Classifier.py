@@ -1,5 +1,3 @@
-# To add a new cell, type '# %%'
-# To add a new markdown cell, type '# %% [markdown]'
 # %%
 from IPython import get_ipython
 from glob import glob
@@ -186,8 +184,18 @@ EPOCHS = 10
 BATCH_SIZE = 128
 
 dropout_keep_prob = tf.placeholder(tf.float32)
+conv_dropout_keep_prob = tf.placeholder(tf.float32)
 
+conv1 = None
+conv2 = None
+fc1 = None
+fc2 = None
 def ConvNet(x):
+    global conv1
+    global conv2
+    global fc1
+    global fc2
+
     # Arguments used for tf.truncated_normal, randomly defines variables for the weights and biases for each layer
     mu = 0
     sigma = 0.1
@@ -199,6 +207,7 @@ def ConvNet(x):
 
     # Pooling. Input = 28x28x6. Output = 14x14x6
     conv1 = maxpool2d(conv1, k=2)
+    conv1 = tf.nn.dropout(conv1, keep_prob=conv_dropout_keep_prob)
     
     # Layer 2: Convolutional. Output = 10x10x16.
     wc2 = tf.Variable(tf.truncated_normal([5, 5, 6, 16], mu, sigma))
@@ -207,14 +216,15 @@ def ConvNet(x):
 
     # Pooling. Input = 10x10x16. Output = 5x5x16
     conv2 = maxpool2d(conv2, k=2)
+    conv2 = tf.nn.dropout(conv2, keep_prob=conv_dropout_keep_prob)
 
     # Flatten. Input = 5x5x16. Output = 400.
-    conv2 = flatten(conv2)
+    conv2Flat = flatten(conv2)
     
     # Layer 3: Fully Connected. Input = 400. Output = 120.
     wd1 = tf.Variable(tf.truncated_normal([400, 120], mu, sigma))
     bd1 = tf.Variable(tf.truncated_normal([120], mu, sigma))
-    fc1 = tf.add(tf.matmul(conv2, wd1), bd1)
+    fc1 = tf.add(tf.matmul(conv2Flat, wd1), bd1)
 
     # ReLU Activation
     fc1 = tf.nn.relu(fc1)
@@ -263,7 +273,7 @@ def evaluate(X_data, y_data):
     for offset in range(0, num_examples, BATCH_SIZE):
         maxI = offset + BATCH_SIZE
         batch_x, batch_y = X_data[offset:maxI], y_data[offset:maxI]
-        accuracy = sess.run(accuracy_operation, feed_dict={x: batch_x, y: batch_y, dropout_keep_prob: 1})
+        accuracy = sess.run(accuracy_operation, feed_dict={x: batch_x, y: batch_y, dropout_keep_prob: 1, conv_dropout_keep_prob: 1})
         total_accuracy += (accuracy * len(batch_x))
     return total_accuracy / num_examples
 
@@ -278,6 +288,8 @@ saver = tf.train.Saver()
 # %%
 
 ### Model Training
+tf.set_random_seed(123456)
+model_save_file = './model/model.ckpt'
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
 
@@ -289,21 +301,28 @@ with tf.Session() as sess:
         X_shuffled, y_shuffled = shuffle(X_train_processed, y_train)
         for offset in range(0, num_examples, BATCH_SIZE):
             batch_x, batch_y = X_shuffled[offset:offset+BATCH_SIZE], y_shuffled[offset:offset+BATCH_SIZE]
-            sess.run(training_operation, feed_dict={x: batch_x, y: batch_y, dropout_keep_prob: 0.75})
+            sess.run(training_operation, feed_dict={x: batch_x, y: batch_y, dropout_keep_prob: 0.5, conv_dropout_keep_prob: 0.9})
         
         validation_accuracy = evaluate(X_valid_processed, y_valid)
         print("EPOCH {}: Validation accuracy {:.3f}".format(i+1, validation_accuracy))
 
-    saver.save(sess, './model/trained-model')
+    saver.save(sess, model_save_file)
     print("Model saved")
+
+# %% [markdown]
+# ## Validation Accuracy
+# %%
+with tf.Session() as sess:
+    saver.restore(sess, model_save_file)
+
+    test_accuracy = evaluate(X_valid_processed, y_valid)
+    print("Validation Accuracy = {:.3f}".format(test_accuracy))
 
 # %% [markdown]
 # ## Test the Model on Test Set
 # %%
-print(X_test_processsed.shape)
-print(y_test.shape)
 with tf.Session() as sess:
-    saver.restore(sess, tf.train.latest_checkpoint('./model'))
+    saver.restore(sess, model_save_file)
 
     test_accuracy = evaluate(X_test_processsed, y_test)
     print("Test Accuracy = {:.3f}".format(test_accuracy))
@@ -342,47 +361,34 @@ for i in range(len(filenames)):
 # %% 
 
 test_imgs_processed = preprocess(np.array(test_imgs))
-
 with tf.Session() as sess:
-    saver.restore(sess, tf.train.latest_checkpoint('./model'))
+    saver.restore(sess, model_save_file)
+
     accuracy_test_imgs = evaluate(test_imgs_processed, test_labels)
+    print("Accuracy = {:.2f}%".format(accuracy_test_imgs*100))
+    print("======================")
 
     softmax = tf.nn.softmax(logits)
-    softmax_eval = sess.run(softmax, feed_dict={x: test_imgs_processed, y: test_labels, dropout_keep_prob: 1.})
+    top5_softmax_eval = sess.run(tf.nn.top_k(softmax, k=5), feed_dict={x: test_imgs_processed, y: test_labels, dropout_keep_prob: 1., conv_dropout_keep_prob: 1.0})
+    print(top5_softmax_eval)
 
-# %%
-
-print("Accuracy = {:.2f}%".format(accuracy_test_imgs*100))
-
-# %% 
-
-predictions = np.argmax(softmax_eval, axis=1)
+print("======================")
+predictions = top5_softmax_eval.indices[:,0]
 print("LABELS")
 print(signNames(test_labels))
+print("======================")
 print("PREDICTIONS")
 print(signNames(predictions))
 
 # %% 
 
-softmax_sorted = np.sort(softmax_eval)
-softmax_cut = softmax_sorted[:,-5:]
-softmax_cut = softmax_cut[:,::-1]
-
-softmax_indexes_sorted = np.argsort(softmax_eval)
-softmax_indexes_cut = softmax_indexes_sorted[:,-5:]
-softmax_indexes_cut = softmax_indexes_cut[:,::-1]
-softmax_named = list(map(lambda l: signNames(l), softmax_indexes_cut))
-print(softmax_indexes_cut)
-print(softmax_cut)
-print(softmax_named)
-# %%
-
+softmax_labels_named = list(map(lambda x: signNames(x), top5_softmax_eval.indices))
 plt.figure(figsize=(10,20))
-for i in range(len(softmax_named)):
+for i in range(len(softmax_labels_named)):
     plt.subplot(5,2,i*2+1)
-    y_pos = np.arange(len(softmax_named[i]))
-    plt.barh(y_pos, softmax_cut[i], align='center', alpha=0.5)
-    plt.yticks(y_pos, softmax_named[i])
+    y_pos = np.arange(len(softmax_labels_named[i]))
+    plt.barh(y_pos, top5_softmax_eval.values[i], align='center', alpha=0.5)
+    plt.yticks(y_pos, softmax_labels_named[i])
     plt.subplot(5,2,i*2+2)
     plt.imshow(test_imgs[i])
 plt.show()
@@ -430,9 +436,6 @@ plt.show()
 # 
 # Looking just at the first row we get `[ 0.34763842,  0.24879643,  0.12789202]`, you can confirm these are the 3 largest probabilities in `a`. You'll also notice `[3, 0, 5]` are the corresponding indices.
 
-# %%
-### Print out the top five softmax probabilities for the predictions on the German traffic sign images found on the web. 
-### Feel free to use as many code cells as needed.
 
 # %% [markdown]
 # ### Project Writeup
@@ -477,7 +480,8 @@ def outputFeatureMap(image_input, tf_activation, activation_min=-1, activation_m
     # image_input =
     # Note: x should be the same name as your network's tensorflow data placeholder variable
     # If you get an error tf_activation is not defined it may be having trouble accessing the variable from inside a function
-    activation = tf_activation.eval(session=sess,feed_dict={x : image_input})
+    activation = tf_activation.eval(session=sess,feed_dict={x : image_input, dropout_keep_prob: 1., conv_dropout_keep_prob: 1.})
+    print(activation.shape)
     featuremaps = activation.shape[3]
     plt.figure(plt_num, figsize=(15,15))
     for featuremap in range(featuremaps):
@@ -492,3 +496,8 @@ def outputFeatureMap(image_input, tf_activation, activation_min=-1, activation_m
         else:
             plt.imshow(activation[0,:,:, featuremap], interpolation="nearest", cmap="gray")
 
+with tf.Session() as sess:
+    saver.restore(sess, model_save_file)
+    outputFeatureMap([test_imgs_processed[-1]], conv1)
+
+# %%
