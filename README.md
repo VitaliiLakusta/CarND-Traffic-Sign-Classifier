@@ -1,4 +1,5 @@
 # **Traffic Sign Recognition with CNN** 
+![softmax probabilities](./examples/readme-header.png)
 
 ## Overview
 
