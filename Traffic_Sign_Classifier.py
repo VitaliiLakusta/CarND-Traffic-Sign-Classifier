@@ -1,6 +1,11 @@
+# To add a new cell, type '# %%'
+# To add a new markdown cell, type '# %% [markdown]'
+# %%
+from IPython import get_ipython
+
 # %% [markdown]
-# # Traffic Sign Recognition Classifier with Conv Net
-# Training and testing CNN model on the [German Traffic Sign Dataset](http://benchmark.ini.rub.de/?section=gtsrb&subsection=dataset).
+#  # Traffic Sign Recognition Classifier with Conv Net
+#  Training and testing CNN model on the [German Traffic Sign Dataset](http://benchmark.ini.rub.de/?section=gtsrb&subsection=dataset).
 
 # %%
 from IPython import get_ipython
@@ -16,7 +21,7 @@ from sklearn.utils import shuffle
 import pandas as pd
 
 # %% [markdown]
-# ## Load The Data
+#  ## Load The Data
 
 # %%
 # Load pickled data
@@ -36,14 +41,14 @@ X_valid, y_valid = valid['features'], valid['labels']
 X_test, y_test = test['features'], test['labels']
 
 # %% [markdown]
-# ## Dataset Summary & Exploration
+#  ## Dataset Summary & Exploration
 # 
-# The pickled data is a dictionary with 4 key/value pairs:
+#  The pickled data is a dictionary with 4 key/value pairs:
 # 
-# - `'features'` is a 4D array containing raw pixel data of the traffic sign images, (num examples, width, height, channels).
-# - `'labels'` is a 1D array containing the label/class id of the traffic sign. The file `signnames.csv` contains id -> name mappings for each id.
-# - `'sizes'` is a list containing tuples, (width, height) representing the original width and height the image.
-# - `'coords'` is a list containing tuples, (x1, y1, x2, y2) representing coordinates of a bounding box around the sign in the image. **THESE COORDINATES ASSUME THE ORIGINAL IMAGE. THE PICKLED DATA CONTAINS RESIZED VERSIONS (32 by 32) OF THESE IMAGES**
+#  - `'features'` is a 4D array containing raw pixel data of the traffic sign images, (num examples, width, height, channels).
+#  - `'labels'` is a 1D array containing the label/class id of the traffic sign. The file `signnames.csv` contains id -> name mappings for each id.
+#  - `'sizes'` is a list containing tuples, (width, height) representing the original width and height the image.
+#  - `'coords'` is a list containing tuples, (x1, y1, x2, y2) representing coordinates of a bounding box around the sign in the image. **THESE COORDINATES ASSUME THE ORIGINAL IMAGE. THE PICKLED DATA CONTAINS RESIZED VERSIONS (32 by 32) OF THESE IMAGES**
 
 # %%
 
@@ -69,9 +74,9 @@ print("Image data shape =", image_shape)
 print("Number of classes =", n_classes)
 
 # %% [markdown]
-# ### Exploratory visualization of the dataset
+#  ### Exploratory visualization of the dataset
 
-# %% 
+# %%
 sign_names = pd.read_csv('signnames.csv', delimiter=',')
 sign_names_dict = sign_names.to_dict()['SignName']
 def signName(label):
@@ -79,12 +84,15 @@ def signName(label):
 
 def signNames(labels):
     return list(map(lambda l: signName(l), labels))
+
+
 # %%
 
 get_ipython().run_line_magic('matplotlib', 'inline')
 
 plt.imshow(X_train[0])
 print(signName(y_train[0]))
+
 
 # %%
 # Show random image from a train set
@@ -93,9 +101,9 @@ plt.imshow(X_train[index])
 print(signName(y_train[index]))
 
 # %% [markdown]
-# ## Model Architecture
+#  ## Model Architecture
 # %% [markdown]
-# ### Pre-processing the Data Set (normalization) 
+#  ### Pre-processing the Data Set (normalization)
 
 # %%
 # Preprocessing data
@@ -105,13 +113,14 @@ X_train_processed = preprocess(X_train)
 X_valid_processed = preprocess(X_valid)
 X_test_processsed = preprocess(X_test)
 
+
 # %%
 print('Sanity check for preprocessing step...')
 print('Max value in preprocessed train data {}'.format(np.max(X_train_processed)))
 print('Min value in preprocessed train data {}'.format(np.min(X_train_processed)))
 
 # %% [markdown]
-# ### Net Architecture
+#  ### Net Architecture
 
 # %%
 
@@ -141,8 +150,8 @@ def ConvNet(x):
     sigma = 0.1
     
     # Layer 1: Convolutional. Input = 32x32x3. Output = 28x28x6.
-    wc1 = tf.Variable(tf.truncated_normal([5, 5, 3, 6], mu, sigma))
-    bc1 = tf.Variable(tf.truncated_normal([6], mu, sigma))
+    wc1 = tf.Variable(tf.truncated_normal([5, 5, 3, 6], mu, sigma), name='wc1')
+    bc1 = tf.Variable(tf.truncated_normal([6], mu, sigma), name='bc1')
     conv1 = conv2d(x, wc1, bc1, strides=1)
 
     # Pooling. Input = 28x28x6. Output = 14x14x6
@@ -150,8 +159,8 @@ def ConvNet(x):
     conv1 = tf.nn.dropout(conv1, keep_prob=conv_dropout_keep_prob)
     
     # Layer 2: Convolutional. Output = 10x10x16.
-    wc2 = tf.Variable(tf.truncated_normal([5, 5, 6, 16], mu, sigma))
-    bc2 = tf.Variable(tf.truncated_normal([16], mu, sigma))
+    wc2 = tf.Variable(tf.truncated_normal([5, 5, 6, 16], mu, sigma), name='wc2')
+    bc2 = tf.Variable(tf.truncated_normal([16], mu, sigma), name='bc2')
     conv2 = conv2d(conv1, wc2, bc2, strides=1)
 
     # Pooling. Input = 10x10x16. Output = 5x5x16
@@ -162,8 +171,8 @@ def ConvNet(x):
     conv2Flat = flatten(conv2)
     
     # Layer 3: Fully Connected. Input = 400. Output = 120.
-    wd1 = tf.Variable(tf.truncated_normal([400, 120], mu, sigma))
-    bd1 = tf.Variable(tf.truncated_normal([120], mu, sigma))
+    wd1 = tf.Variable(tf.truncated_normal([400, 120], mu, sigma), name='wd1')
+    bd1 = tf.Variable(tf.truncated_normal([120], mu, sigma), name='bd1')
     fc1 = tf.add(tf.matmul(conv2Flat, wd1), bd1)
 
     # ReLU Activation
@@ -172,8 +181,8 @@ def ConvNet(x):
     fc1 = tf.nn.dropout(fc1, keep_prob=dropout_keep_prob)
 
     # Layer 4: Fully Connected. Input = 120. Output = 84.
-    wd2 = tf.Variable(tf.truncated_normal([120, 84], mu, sigma))
-    bd2 = tf.Variable(tf.truncated_normal([84], mu, sigma))
+    wd2 = tf.Variable(tf.truncated_normal([120, 84], mu, sigma), name='wd2')
+    bd2 = tf.Variable(tf.truncated_normal([84], mu, sigma), name='bd2')
     fc2 = tf.add(tf.matmul(fc1, wd2), bd2)
     
     # ReLU Activation
@@ -182,8 +191,8 @@ def ConvNet(x):
     fc2 = tf.nn.dropout(fc2, keep_prob=dropout_keep_prob)
 
     # Layer 5: Fully Connected. Input = 84. Output = n_classes
-    wOut = tf.Variable(tf.truncated_normal([84, n_classes], mu, sigma))
-    bOut = tf.Variable(tf.truncated_normal([n_classes], mu, sigma))
+    wOut = tf.Variable(tf.truncated_normal([84, n_classes], mu, sigma), name='wOut')
+    bOut = tf.Variable(tf.truncated_normal([n_classes], mu, sigma), name='bOut')
     logits = tf.add(tf.matmul(fc2, wOut), bOut)
     
     return logits
@@ -218,15 +227,15 @@ def evaluate(X_data, y_data):
     return total_accuracy / num_examples
 
 saver = tf.train.Saver()
-
-# %% [markdown]
-# ## Train, Validate and Test the Model
-
-# %% [markdown]
-
-### Model Training
-tf.set_random_seed(123456)
 model_save_file = './model/model.ckpt'
+
+# %% [markdown]
+#  ## Train, Validate and Test the Model
+# %% [markdown]
+# ## Model Training
+
+# %%
+tf.set_random_seed(123456)
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
 
@@ -247,7 +256,18 @@ with tf.Session() as sess:
     print("Model saved")
 
 # %% [markdown]
-# ### Validation Accuracy
+# ### Train Accuracy
+
+# %%
+with tf.Session() as sess:
+    saver.restore(sess, model_save_file)
+
+    test_accuracy = evaluate(X_train_processed, y_train)
+    print("Train Accuracy = {:.3f}".format(test_accuracy))
+
+# %% [markdown]
+#  ### Validation Accuracy
+
 # %%
 with tf.Session() as sess:
     saver.restore(sess, model_save_file)
@@ -256,7 +276,8 @@ with tf.Session() as sess:
     print("Validation Accuracy = {:.3f}".format(test_accuracy))
 
 # %% [markdown]
-# ### Test Accuracy
+#  ### Test Accuracy
+
 # %%
 with tf.Session() as sess:
     saver.restore(sess, model_save_file)
@@ -265,9 +286,9 @@ with tf.Session() as sess:
     print("Test Accuracy = {:.3f}".format(test_accuracy))
 
 # %% [markdown]
-# ## Test a Model on New Images (out of this data set)
+#  ## Test a Model on New Images (out of this data set)
 
-#%%
+# %%
 
 filenames = glob('./images/*')
 test_imgs = []
@@ -285,9 +306,9 @@ for i in range(len(filenames)):
     plt.imshow(img)
 
 # %% [markdown]
-# ### Predict the Sign Type for Each Image
+#  ### Predict the Sign Type for Each Image
 
-# %% 
+# %%
 
 test_imgs_processed = preprocess(np.array(test_imgs))
 with tf.Session() as sess:
@@ -310,8 +331,9 @@ print("PREDICTIONS")
 print(signNames(predictions))
 
 # %% [markdown]
-# ### Top 5 Softmax Predictions per Image
-# %% 
+#  ### Top 5 Softmax Predictions per Image
+
+# %%
 
 softmax_labels_named = list(map(lambda x: signNames(x), top5_softmax_eval.indices))
 plt.figure(figsize=(10,20))
@@ -325,7 +347,7 @@ for i in range(len(softmax_labels_named)):
 plt.show()
 
 # %% [markdown]
-# ## Visualizing the Neural Network's State with Test Images
+#  ## Visualizing the Neural Network's State with Test Images
 
 # %%
 # image_input: the test image being fed into the network to produce the feature maps
@@ -356,5 +378,9 @@ def outputFeatureMap(image_input, tf_activation, activation_min=-1, activation_m
 
 with tf.Session() as sess:
     saver.restore(sess, model_save_file)
-    outputFeatureMap([test_imgs_processed[-1]], conv1)
+    outputFeatureMap([test_imgs_processed[4]], conv1)
+
+
 # %%
+
+
