@@ -1,8 +1,3 @@
-# To add a new cell, type '# %%'
-# To add a new markdown cell, type '# %% [markdown]'
-# %%
-from IPython import get_ipython
-
 # %% [markdown]
 #  # Traffic Sign Recognition Classifier with Conv Net
 #  Training and testing CNN model on the [German Traffic Sign Dataset](http://benchmark.ini.rub.de/?section=gtsrb&subsection=dataset).
@@ -99,6 +94,16 @@ print(signName(y_train[0]))
 index = np.random.randint(0, len(X_train))
 plt.imshow(X_train[index])
 print(signName(y_train[index]))
+
+#%% 
+# Show distribution difference among all the data sets
+plt.hist(y_train, bins=n_classes)
+plt.hist(y_test, bins=n_classes)
+plt.hist(y_valid, bins=n_classes)
+plt.xlabel('Sample Count')
+plt.ylabel('Number of Instances')
+plt.legend(['Training Data', 'Test Data', 'Validation Data'], loc='upper center')
+plt.show()
 
 # %% [markdown]
 #  ## Model Architecture

@@ -48,6 +48,10 @@ Here is the random image from a train data set.
 
 ![sign keep right](./examples/explore-sign-keep-right.png)
 
+Also I have analyzed distribution difference among test/train/valid data sets. It does look like data is skewed right now. Future work would include having more uniform distribution of all samples. 
+
+![data distribution](./examples/data-distribution.png)
+
 ## Model Architecture
 
 ### Preprocessing: 
